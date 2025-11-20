@@ -1,0 +1,33 @@
+name: ai_powered_expense_tracker
+description: "AI Powered Expense Tracker"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  drift: ^2.29.0
+  drift_flutter: ^0.2.7
+  path_provider: ^2.1.5
+  http: ^1.6.0
+  flutter_dotenv: ^6.0.0
+  rxdart: ^0.28.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.29.0
+  build_runner: ^2.9.0
+
+flutter:
+
+  uses-material-design: true
+  assets:
+    - .env
+
