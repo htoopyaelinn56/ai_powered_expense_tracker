@@ -60,7 +60,7 @@ Runs on **iOS** and **Android**, with your data stored locally on the device.
 ### Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/htoopyaelinn56/ai_powered_expense_tracker
 cd ai_powered_expense_tracker
 ```
 
