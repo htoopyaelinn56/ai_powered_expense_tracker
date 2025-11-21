@@ -1,4 +1,5 @@
 import 'package:ai_powered_expense_tracker/database/database.dart';
+import 'package:ai_powered_expense_tracker/message_interpretation/message_result.dart';
 import 'package:ai_powered_expense_tracker/repository.dart';
 import 'package:flutter/material.dart';
 
@@ -28,6 +29,34 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('AI Powered Expense Tracker')),
+      body: Center(
+        child: StreamBuilder(
+          stream: messageResultSubject,
+          builder: (_, snapshot) {
+            if (snapshot.hasData) {
+              final messageResult = snapshot.data!;
+              return switch (messageResult) {
+                GetExpensesMessageResult() => Text(
+                  'Not yet implemented',
+                  textAlign: TextAlign.center,
+                ),
+                AddExpenseMessageResult() => Text(
+                  'Added expense successfully!',
+                  textAlign: TextAlign.center,
+                ),
+                NoResultMessageResult() => Text(
+                  messageResult.text,
+                  textAlign: TextAlign.center,
+                ),
+              };
+            } else {
+              return Center(
+                child: Text('No messages yet.', textAlign: TextAlign.center),
+              );
+            }
+          },
+        ),
+      ),
       bottomNavigationBar: BottomAppBar(
         child: Row(
           children: [
@@ -46,7 +75,10 @@ class _ChatScreenState extends State<ChatScreen> {
             IconButton(
               icon: Icon(Icons.send),
               onPressed: () {
-                messageInterpreter.interpretAndProcess(messageController.text);
+                messageInterpreter.interpretAndProcess(
+                  messageController.text,
+                  repository,
+                );
                 messageController.clear();
               },
             ),

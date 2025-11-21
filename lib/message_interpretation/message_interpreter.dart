@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:ai_powered_expense_tracker/database/database.dart';
 import 'package:ai_powered_expense_tracker/message_interpretation/function_call_result.dart';
 import 'package:ai_powered_expense_tracker/message_interpretation/message_interpret_exception.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:rxdart/rxdart.dart';
+
+import '../repository.dart';
+import 'message_result.dart';
 
 class MessageInterpreter {
   Future<FunctionCallResult> getFunctionCallResult(String message) async {
@@ -38,7 +43,7 @@ class MessageInterpreter {
                       "description":
                           "Start of date range (e.g., '1. 2. 2025') in dd-mm-yyyy.",
                     },
-                    "end_date": {
+                    "`end_date`": {
                       "type": "string",
                       "description":
                           "End of date range (e.g., '1. 2. 2025') in dd-mm-yyyy.",
@@ -93,39 +98,80 @@ class MessageInterpreter {
 
       final responseBody = jsonDecode(response.body);
 
-      final functionName =
-          responseBody['candidates'][0]['content']['parts'][0]['functionCall']['name'];
+      final functionCall =
+          responseBody['candidates'][0]['content']['parts'][0]['functionCall'];
 
       final text = responseBody['candidates'][0]['content']['parts'][0]['text'];
 
-      if (functionName == 'get_expense') {
-        return GetExpensesFunctionCall();
-      } else if (functionName == 'add_expense') {
-        return AddExpenseFunctionCall();
+      if (functionCall != null) {
+        if (functionCall['name'] == 'get_expense') {
+          final args = functionCall['args'];
+          return GetExpensesFunctionCall(
+            date: _parsedFromString(args['date'].toString()),
+            startDate: _parsedFromString(args['start_date'].toString()),
+            endDate: _parsedFromString(args['end_date'].toString()),
+            name: args['name'],
+          );
+        } else  {
+          // functionCall['name'] == 'add_expense'
+          final args = functionCall['args'];
+          return AddExpenseFunctionCall(
+            amount: double.tryParse(args['amount'].toString()) ?? 0,
+            name: args['name'],
+            date: _parsedFromString(args['date'].toString()),
+          );
+        }
       } else {
-        return NoResultFunctionCall(text: text);
+        return NoResultFunctionCall(text: text, isError: false);
       }
     } catch (_) {
       rethrow;
     }
   }
 
-  void interpretAndProcess(String message) async {
+  void interpretAndProcess(String message, Repository repository) async {
     try {
       final functionCallResult = await getFunctionCallResult(message);
       switch (functionCallResult) {
         case NoResultFunctionCall():
-          // it will show the text response from the AI
-          throw UnimplementedError();
+          {
+            final result = functionCallResult;
+            messageResultSubject.add(
+              NoResultMessageResult(text: result.text, isError: result.isError),
+            );
+          }
         case GetExpensesFunctionCall():
-          // will call repository.getAllExpenses() and show the result
-          throw UnimplementedError();
         case AddExpenseFunctionCall():
-          // will call repository.addExpense(...) with parsed parameters
-          throw UnimplementedError();
+          {
+            final result = functionCallResult as AddExpenseFunctionCall;
+            final expenseData = ExpenseCompanion.insert(
+              name: result.name,
+              amount: result.amount,
+              date: result.date,
+            );
+            await repository.addExpense(expenseData);
+            messageResultSubject.add(
+              AddExpenseMessageResult(expense: expenseData),
+            );
+          }
       }
-    } catch (e) {
-      log('Error interpreting message: $e');
+    } catch (e, st) {
+      log('Error interpreting message: $e $st');
     }
   }
+
+  DateTime _parsedFromString(String dateStr) {
+    final parts = dateStr.split('.').map((e) => e.trim()).toList();
+    if (parts.length != 3) {
+      throw MessageInterpretException(
+        'Invalid date format. Expected format: dd. mm. yyyy',
+      );
+    }
+    final day = int.parse(parts[0]);
+    final month = int.parse(parts[1]);
+    final year = int.parse(parts[2]);
+    return DateTime(year, month, day);
+  }
 }
+
+final messageResultSubject = BehaviorSubject<MessageResult?>.seeded(null);

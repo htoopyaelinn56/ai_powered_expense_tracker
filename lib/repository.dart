@@ -2,27 +2,27 @@ import 'package:ai_powered_expense_tracker/database/database.dart';
 import 'package:drift/drift.dart';
 
 class Repository {
-  final AppDatabase database;
+  final AppDatabase _database;
 
-  Repository(this.database);
+  Repository(AppDatabase database) : _database = database;
 
   Future<List<ExpenseData>> getAllExpenses() {
-    return database.select(database.expense).get();
+    return _database.select(_database.expense).get();
   }
 
   Future<int> addExpense(ExpenseCompanion expense) {
-    return database.into(database.expense).insert(expense);
+    return _database.into(_database.expense).insert(expense);
   }
 
   Future<ExpenseData> getExpenseByName(String name) {
-    return (database.select(
-      database.expense,
+    return (_database.select(
+      _database.expense,
     )..where((tbl) => tbl.name.equals(name))).getSingle();
   }
 
   Future<List<ExpenseData>> getExpenseByDate(DateTime date) {
-    return (database.select(
-      database.expense,
+    return (_database.select(
+      _database.expense,
     )..where((tbl) => tbl.date.equals(date))).get();
   }
 
@@ -30,8 +30,8 @@ class Repository {
     DateTime startDate,
     DateTime endDate,
   ) {
-    return (database.select(
-      database.expense,
+    return (_database.select(
+      _database.expense,
     )..where((tbl) => tbl.date.isBetweenValues(startDate, endDate))).get();
   }
 }
