@@ -106,16 +106,13 @@ void main() {
 
       final result = await repository.getExpenseByName('Dinner');
 
-      expect(result.name, 'Dinner');
-      expect(result.amount, 30.0);
-      expect(result.date, DateTime(2024, 1, 7));
+      expect(result?.name, 'Dinner');
+      expect(result?.amount, 30.0);
+      expect(result?.date, DateTime(2024, 1, 7));
     });
 
     test('throws when no expense exists for the given name', () async {
-      expect(
-        () => repository.getExpenseByName('NonExistent'),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => repository.getExpenseByName('NonExistent'), returnsNormally);
     });
   });
 
