@@ -112,7 +112,7 @@ class MessageInterpreter {
             endDate: _parsedFromString(args['end_date'].toString()),
             name: args['name'],
           );
-        } else  {
+        } else {
           // functionCall['name'] == 'add_expense'
           final args = functionCall['args'];
           return AddExpenseFunctionCall(
@@ -141,18 +141,45 @@ class MessageInterpreter {
             );
           }
         case GetExpensesFunctionCall():
+          final result = functionCallResult;
+          {
+            List<ExpenseData> expenses = [];
+            if (result.date != null) {
+              expenses = await repository.getExpenseByDate(result.date!);
+            } else if (result.startDate != null && result.endDate != null) {
+              expenses = await repository.getExpenseByDateRange(
+                result.startDate!,
+                result.endDate!,
+              );
+            } else if (result.name != null) {
+              final expense = await repository.getExpenseByName(result.name!);
+              expenses = [?expense];
+            } else {
+              expenses = await repository.getAllExpenses();
+            }
+            messageResultSubject.add(
+              GetExpensesMessageResult(expenses: expenses),
+            );
+          }
         case AddExpenseFunctionCall():
           {
-            final result = functionCallResult as AddExpenseFunctionCall;
-            final expenseData = ExpenseCompanion.insert(
-              name: result.name,
-              amount: result.amount,
-              date: result.date,
-            );
-            await repository.addExpense(expenseData);
-            messageResultSubject.add(
-              AddExpenseMessageResult(expense: expenseData),
-            );
+            final result = functionCallResult;
+            if (result.date == null) {
+              messageResultSubject.add(
+                NoResultMessageResult(text: 'Invalid or missing date format.', isError: true),
+              );
+              return;
+            } else {
+              final expenseData = ExpenseCompanion.insert(
+                name: result.name,
+                amount: result.amount,
+                date: result.date!,
+              );
+              await repository.addExpense(expenseData);
+              messageResultSubject.add(
+                AddExpenseMessageResult(expense: expenseData),
+              );
+            }
           }
       }
     } catch (e, st) {
@@ -160,12 +187,10 @@ class MessageInterpreter {
     }
   }
 
-  DateTime _parsedFromString(String dateStr) {
+  DateTime? _parsedFromString(String dateStr) {
     final parts = dateStr.split('.').map((e) => e.trim()).toList();
     if (parts.length != 3) {
-      throw MessageInterpretException(
-        'Invalid date format. Expected format: dd. mm. yyyy',
-      );
+      return null;
     }
     final day = int.parse(parts[0]);
     final month = int.parse(parts[1]);

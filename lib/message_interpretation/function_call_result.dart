@@ -24,7 +24,7 @@ final class GetExpensesFunctionCall extends FunctionCallResult {
 final class AddExpenseFunctionCall extends FunctionCallResult {
   final double amount;
   final String name;
-  final DateTime date;
+  final DateTime? date;
 
   AddExpenseFunctionCall({
     required this.amount,

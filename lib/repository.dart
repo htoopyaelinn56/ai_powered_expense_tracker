@@ -14,10 +14,10 @@ class Repository {
     return _database.into(_database.expense).insert(expense);
   }
 
-  Future<ExpenseData> getExpenseByName(String name) {
+  Future<ExpenseData?> getExpenseByName(String name) {
     return (_database.select(
       _database.expense,
-    )..where((tbl) => tbl.name.equals(name))).getSingle();
+    )..where((tbl) => tbl.name.equals(name))).getSingleOrNull();
   }
 
   Future<List<ExpenseData>> getExpenseByDate(DateTime date) {

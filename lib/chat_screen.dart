@@ -36,9 +36,20 @@ class _ChatScreenState extends State<ChatScreen> {
             if (snapshot.hasData) {
               final messageResult = snapshot.data!;
               return switch (messageResult) {
-                GetExpensesMessageResult() => Text(
-                  'Not yet implemented',
-                  textAlign: TextAlign.center,
+                GetExpensesMessageResult() => Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Here you go',
+                      textAlign: TextAlign.center,
+                    ),
+                    ...messageResult.expenses.map(
+                      (expense) => Text(
+                        '${expense.name}: ${expense.amount} on ${expense.date.toLocal().toIso8601String().split('T').first}',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
                 AddExpenseMessageResult() => Text(
                   'Added expense successfully!',
@@ -51,7 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
               };
             } else {
               return Center(
-                child: Text('No messages yet.', textAlign: TextAlign.center),
+                child: Text('Hello!', textAlign: TextAlign.center),
               );
             }
           },
